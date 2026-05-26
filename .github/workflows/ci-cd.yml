@@ -11,7 +11,8 @@ on:
         description: 'Версия образа для production (тег)'
         required: false
         default: 'latest'
-  jobs:
+
+jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
@@ -61,7 +62,8 @@ on:
       - name: Static analysis (clang-tidy)
         run: |
           clang-tidy src/main.cpp -- -I.
-    docker-build-push:
+
+  docker-build-push:
     needs: build-and-test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -84,7 +86,8 @@ on:
           IMAGE_TAG=ghcr.io/${{ env.REPO_LOWER }}:latest
           docker build -t $IMAGE_TAG .
           docker push $IMAGE_TAG
-    deploy-staging:
+
+  deploy-staging:
     needs: docker-build-push
     runs-on: ubuntu-latest
 
@@ -121,7 +124,8 @@ on:
         with:
           name: staging-metrics
           path: staging_metrics.txt
-    deploy-production:
+
+  deploy-production:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: production
@@ -147,7 +151,7 @@ on:
           # Останавливаем старый blue (если есть)
           docker stop app-blue 2>/dev/null || true
 
-          # Запускаем новую версию как blue на 8080
+          # Запускаем новую версию на основном порту 8080
           docker run -d --name app-blue -p 8080:8080 $IMAGE
           sleep 3
           curl --fail http://localhost:8080/health || exit 1
@@ -177,7 +181,8 @@ on:
         with:
           name: production-metrics
           path: production_metrics.txt
-    notification:
+
+  notification:
     if: always()
     needs: [build-and-test, docker-build-push, deploy-staging, deploy-production]
     runs-on: ubuntu-latest
